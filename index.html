@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart GIF Frame Extractor</title>
+<script src="https://cdn.jsdelivr.net/npm/gifuct-js@1.0.0/dist/gifuct.min.js"></script>
+<style>
+/* Reset & fonts */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #eee; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+
+/* Header */
+h1 { margin-bottom: 20px; font-size: 2rem; text-align: center; }
+
+/* Drag & drop */
+#dropzone {
+  border: 3px dashed #555;
+  padding: 60px 20px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #1f1f1f, #181818);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #bbb;
+}
+#dropzone:hover { border-color: #1abc9c; color: #1abc9c; background: linear-gradient(145deg, #232323, #1e1e1e); }
+
+/* Frames grid */
+#frames-container { margin-top: 30px; width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; margin-top: 20px; }
+.grid-item { background: #1f1f1f; padding: 10px; border-radius: 10px; text-align: center; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.grid-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,255,150,0.3); }
+.grid-item img { max-width: 100%; border-radius: 5px; margin-bottom: 5px; }
+
+/* Buttons */
+button {
+  padding: 12px 25px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 8px;
+  background: #1abc9c;
+  color: #121212;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+button:hover { background: #16a085; transform: scale(1.05); }
+
+/* Links */
+a { color: #1abc9c; text-decoration: none; font-size: 0.9rem; display: block; overflow-wrap: break-word; }
+a:hover { text-decoration: underline; }
+
+</style>
+</head>
+<body>
+
+<h1>Smart GIF Frame Extractor</h1>
+<div id="dropzone">Drag & Drop GIF Here</div>
+<div id="frames-container">
+  <button id="copy-btn" style="display:none;">Copy All Base64 Links</button>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const dropzone = document.getElementById('dropzone');
+const grid = document.getElementById('grid');
+const copyBtn = document.getElementById('copy-btn');
+let allLinks = [];
+
+dropzone.addEventListener('dragover', e => e.preventDefault());
+
+dropzone.addEventListener('drop', async e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || file.type !== 'image/gif') {
+        alert("Please drop a GIF file!");
+        return;
+    }
+
+    const buffer = await file.arrayBuffer();
+    const gif = gifuct.parseGIF(buffer);
+    const frames = gifuct.decompressFrames(gif, true);
+
+    grid.innerHTML = '';
+    allLinks = [];
+
+    for (let i = 0; i < frames.length; i++) {
+        const frame = frames[i];
+        const canvas = document.createElement('canvas');
+        canvas.width = frame.dims.width;
+        canvas.height = frame.dims.height;
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(frame.dims.width, frame.dims.height);
+        imageData.data.set(frame.patch);
+        ctx.putImageData(imageData, 0, 0);
+
+        const dataUrl = canvas.toDataURL('image/png');
+        allLinks.push(dataUrl);
+
+        const item = document.createElement('div');
+        item.className = 'grid-item';
+
+        const img = document.createElement('img');
+        img.src = dataUrl;
+
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `frame-${i+1}.png`;
+        a.textContent = `Frame ${i+1}`;
+
+        item.appendChild(img);
+        item.appendChild(a);
+        grid.appendChild(item);
+    }
+
+    copyBtn.style.display = 'inline-block';
+});
+
+copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(allLinks.join('\n'));
+    alert('Copied all Base64 links!');
+});
+</script>
+
+</body>
+</html>
