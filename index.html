@@ -6,53 +6,19 @@
 <title>Smart GIF Frame Extractor</title>
 <script src="https://cdn.jsdelivr.net/npm/gifuct-js@1.0.0/dist/gifuct.min.js"></script>
 <style>
-/* Reset & fonts */
-* { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #eee; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
-
-/* Header */
 h1 { margin-bottom: 20px; font-size: 2rem; text-align: center; }
-
-/* Drag & drop */
-#dropzone {
-  border: 3px dashed #555;
-  padding: 60px 20px;
-  width: 90%;
-  max-width: 500px;
-  text-align: center;
-  border-radius: 15px;
-  background: linear-gradient(145deg, #1f1f1f, #181818);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: #bbb;
-}
-#dropzone:hover { border-color: #1abc9c; color: #1abc9c; background: linear-gradient(145deg, #232323, #1e1e1e); }
-
-/* Frames grid */
+#dropzone { border: 3px dashed #555; padding: 60px 20px; width: 90%; max-width: 500px; text-align: center; border-radius: 15px; background: linear-gradient(145deg, #1f1f1f, #181818); cursor: pointer; transition: all 0.3s ease; color: #bbb; }
+#dropzone.hover { border-color: #1abc9c; color: #1abc9c; background: linear-gradient(145deg, #232323, #1e1e1e); }
 #frames-container { margin-top: 30px; width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; margin-top: 20px; }
 .grid-item { background: #1f1f1f; padding: 10px; border-radius: 10px; text-align: center; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .grid-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,255,150,0.3); }
 .grid-item img { max-width: 100%; border-radius: 5px; margin-bottom: 5px; }
-
-/* Buttons */
-button {
-  padding: 12px 25px;
-  margin-top: 15px;
-  border: none;
-  border-radius: 8px;
-  background: #1abc9c;
-  color: #121212;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+button { padding: 12px 25px; margin-top: 15px; border: none; border-radius: 8px; background: #1abc9c; color: #121212; font-weight: bold; cursor: pointer; transition: all 0.2s ease; }
 button:hover { background: #16a085; transform: scale(1.05); }
-
-/* Links */
 a { color: #1abc9c; text-decoration: none; font-size: 0.9rem; display: block; overflow-wrap: break-word; }
 a:hover { text-decoration: underline; }
-
 </style>
 </head>
 <body>
@@ -70,10 +36,28 @@ const grid = document.getElementById('grid');
 const copyBtn = document.getElementById('copy-btn');
 let allLinks = [];
 
-dropzone.addEventListener('dragover', e => e.preventDefault());
+// Add drag events for visual feedback
+['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('hover');
+    }, false);
+});
 
+['dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('hover');
+    }, false);
+});
+
+// Handle drop
 dropzone.addEventListener('drop', async e => {
     e.preventDefault();
+    e.stopPropagation();
+
     const file = e.dataTransfer.files[0];
     if (!file || file.type !== 'image/gif') {
         alert("Please drop a GIF file!");
