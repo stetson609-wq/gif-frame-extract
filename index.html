@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launcher</title>
+  <script src="/favicon.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+      background-color: #ffffff;
+      color: #000000;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Launcher</h1>
+  <p>Click the button to open the full-page embed.</p>
+  <button id="openBtn">Open</button>
+
+  <script>
+    document.getElementById('openBtn').addEventListener('click', () => {
+      // Open a new blank window
+      const win = window.open('about:blank', '_blank');
+
+      if (!win) return alert('Popup blocked! Please allow popups.');
+
+      // Write the full HTML for the new window
+      win.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Loading...</title>
+          <meta name="theme-color" content="#ffffff">
+          <link rel="icon" href="">
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              height: 100%;
+              overflow: hidden;
+              background: #ffffff;
+            }
+            iframe {
+              border: none;
+              width: 100vw;
+              height: 100vh;
+            }
+          </style>
+        </head>
+        <body>
+          <iframe src="https://nullxiety.com"></iframe>
+          <script>
+            (async function() {
+              const fps = 12;
+
+              async function loadFrames(folder) {
+                // fetch frame list from main site
+                const res = await fetch(folder);
+                if (!res.ok) return [];
+                const frames = await res.json();
+                return frames;
+              }
+
+              // Get frames dynamically from main site
+              const [favicon16, favicon32] = await Promise.all([
+                loadFrames('/api/getFrames?size=16'),
+                loadFrames('/api/getFrames?size=32')
+              ]);
+
+              const frames = (window.devicePixelRatio > 1 && favicon32.length > 0) ? favicon32 : favicon16;
+              if (frames.length === 0) return;
+
+              let link = document.querySelector('link[rel="icon"]') || document.createElement('link');
+              link.rel = 'icon';
+              document.head.appendChild(link);
+
+              let current = 0;
+              function animate() {
+                link.href = frames[current] + '?v=' + Date.now();
+                current = (current + 1) % frames.length;
+                setTimeout(animate, 1000 / fps);
+              }
+              animate();
+            })();
+          </script>
+        </body>
+        </html>
+      `);
+
+      win.document.close();
+    });
+  </script>
+</body>
+</html>
